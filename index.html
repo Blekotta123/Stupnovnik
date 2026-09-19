@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonický tréner – Stupne, akordy a modulácia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #1a1e22;
+            margin: 0;
+            padding: 20px 0;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #2c3238;
+            padding: 1.8rem 2.2rem;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 440px;
+            border: 1px solid #3d444d;
+        }
+        .controls {
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .row-setting {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e6edf3;
+        }
+        select {
+            padding: 5px 8px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 1px solid #48525e;
+            background-color: #3b424a;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        input[type=range] {
+            cursor: pointer;
+            accent-color: #388bfd;
+        }
+        .tempo-slider {
+            width: 100%;
+            margin-top: 2px;
+        }
+        input[type=number] {
+            padding: 4px;
+            font-size: 14px;
+            width: 58px;
+            text-align: center;
+            border: 1px solid #48525e;
+            background-color: #3b424a;
+            color: #ffffff;
+            border-radius: 5px;
+        }
+
+        /* Sekcie pre prepínače tónin a stupňov */
+        .selection-box {
+            background-color: #22272c;
+            border: 1px solid #3d454f;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+        }
+        .bar-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8b949e;
+            margin-bottom: 8px;
+        }
+        .degrees-circle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+        .degree-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #48525e;
+            background-color: #343b44;
+            color: #8b949e;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease-in-out;
+        }
+        .degree-circle:hover {
+            transform: scale(1.06);
+            border-color: #6e7681;
+        }
+        .degree-circle.active {
+            background-color: #1f6feb;
+            border-color: #388bfd;
+            color: #ffffff;
+            box-shadow: 0 3px 8px rgba(31, 111, 235, 0.45);
+        }
+
+        /* Mriežka pre výber modulovaných tónin */
+        .keys-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        .key-chip {
+            padding: 6px 4px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 2px solid #48525e;
+            background-color: #343b44;
+            color: #8b949e;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease-in-out;
+            box-sizing: border-box;
+        }
+        .key-chip:hover {
+            border-color: #6e7681;
+        }
+        .key-chip.active {
+            background-color: #4a3478;
+            border-color: #7952cc;
+            color: #ffffff;
+        }
+        /* Orámovanie aktuálne znejúcej tóniny */
+        .key-chip.current-playing {
+            border-color: #58a6ff !important;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.7);
+        }
+        /* Špeciálne orámovanie pri modulácii do nového taktu */
+        .key-chip.current-mod-target {
+            border-color: #e3b341 !important;
+            background-color: #694b15 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 14px rgba(227, 179, 65, 0.95);
+            animation: pulseChip 0.8s infinite alternate;
+        }
+        @keyframes pulseChip {
+            from { transform: scale(1.0); }
+            to { transform: scale(1.06); }
+        }
+
+        /* Mixážna sekcia */
+        .mixer-box {
+            background-color: #22272c;
+            border: 1px solid #3d454f;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+        .mixer-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8b949e;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+        .mixer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e6edf3;
+        }
+        .mixer-row label {
+            width: 145px;
+        }
+        .mixer-row input[type=range] {
+            width: 130px;
+        }
+        .vol-val {
+            width: 38px;
+            font-size: 12px;
+            color: #8b949e;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .visualizer {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background-color: #38404a;
+            margin: 10px auto;
+            transition: background-color 0.05s ease, transform 0.05s ease;
+        }
+        .indicator-beat {
+            background-color: #388bfd;
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(56, 139, 253, 0.6);
+        }
+        .indicator-first-beat {
+            background-color: #f85149;
+            transform: scale(1.18);
+            box-shadow: 0 0 14px rgba(248, 81, 73, 0.7);
+        }
+        .indicator-bell {
+            background-color: #f0883e !important;
+            transform: scale(1.25) !important;
+            box-shadow: 0 0 18px rgba(240, 136, 62, 0.9) !important;
+        }
+        .beat-counter {
+            font-size: 18px;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 6px;
+        }
+        .bar-counter-info {
+            font-size: 12px;
+            font-weight: bold;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+
+        /* Veľký modulačný banner svietiaci celý takt */
+        .mod-alert-banner {
+            display: none;
+            background: linear-gradient(135deg, rgba(187, 128, 9, 0.35), rgba(240, 136, 62, 0.3));
+            border: 2px solid #e3b341;
+            box-shadow: 0 0 16px rgba(227, 179, 65, 0.4);
+            border-radius: 8px;
+            padding: 9px 12px;
+            margin: 8px 0 12px 0;
+            animation: pulseBanner 1.1s infinite alternate ease-in-out;
+        }
+        @keyframes pulseBanner {
+            from { transform: scale(0.99); box-shadow: 0 0 10px rgba(227, 179, 65, 0.3); }
+            to { transform: scale(1.02); box-shadow: 0 0 20px rgba(227, 179, 65, 0.7); }
+        }
+        .mod-alert-title {
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #e3b341;
+        }
+        .mod-alert-key {
+            font-size: 26px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-top: 2px;
+            text-shadow: 0 0 8px rgba(227, 179, 65, 0.8);
+        }
+
+        .current-box {
+            margin-bottom: 10px;
+        }
+        .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 2px;
+        }
+        .degree-display {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            min-height: 34px;
+        }
+        .tone-sub {
+            font-size: 19px;
+            font-weight: 700;
+            color: #58a6ff;
+        }
+        .interval-display {
+            font-size: 18px;
+            font-weight: 800;
+            color: #ff7b72;
+            min-height: 24px;
+            margin-top: 4px;
+        }
+        .next-box {
+            background-color: #22272c;
+            border: 1px dashed #48525e;
+            padding: 7px 10px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            min-height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .next-degree-display {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ff7b72;
+        }
+        button {
+            padding: 12px 36px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #238636;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background 0.2s, opacity 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            opacity: 0.92;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <!-- Aktuálna tónina -->
+            <div class="row-setting">
+                <label for="key-select">Aktuálna tónina:</label>
+                <select id="key-select">
+                    <option value="C" selected>C dur</option>
+                    <option value="G">G dur</option>
+                    <option value="D">D dur</option>
+                    <option value="A">A dur</option>
+                    <option value="E">E dur</option>
+                    <option value="H">H dur</option>
+                    <option value="F#">F# / Gb dur</option>
+                    <option value="C#">C# / Db dur</option>
+                    <option value="Ab">Ab dur</option>
+                    <option value="D#">Eb dur</option>
+                    <option value="Bb">Bb dur</option>
+                    <option value="F">F dur</option>
+                </select>
+            </div>
+
+            <!-- Modulácia každých (predvolené: Vypnutá) -->
+            <div class="row-setting">
+                <label for="modulation-interval">Modulácia každých:</label>
+                <select id="modulation-interval">
+                    <option value="0" selected>Vypnutá</option>
+                    <option value="4">4 takty</option>
+                    <option value="8">8 taktov</option>
+                </select>
+            </div>
+
+            <!-- Prepínač: Stupne vs Akordy -->
+            <div class="row-setting">
+                <label for="cue-mode">Režim hlásenia:</label>
+                <select id="cue-mode">
+                    <option value="degrees" selected>Stupne (Prvý, Druhý...)</option>
+                    <option value="chords">Akordy (C dur, D mol...)</option>
+                </select>
+            </div>
+
+            <!-- Tempo -->
+            <div class="row-setting">
+                <label for="bpm-input">Tempo (BPM):</label>
+                <input type="number" id="bpm-input" value="90" min="40" max="240">
+            </div>
+            <input type="range" class="tempo-slider" id="bpm-slider" value="90" min="40" max="240">
+
+            <!-- Predstih -->
+            <div class="row-setting">
+                <label for="cue-offset">Predstih hlásenia:</label>
+                <select id="cue-offset">
+                    <option value="1.0">Na 4. dobu (1 doba)</option>
+                    <option value="1.5" selected>Na „3 a“ (1.5 doby)</option>
+                    <option value="2.0">Na 3. dobu (2 doby)</option>
+                    <option value="2.5">Na „2 a“ (2.5 doby)</option>
+                </select>
+            </div>
+
+            <!-- Doba pre interval -->
+            <div class="row-setting">
+                <label for="interval-beat">Doba pre interval:</label>
+                <select id="interval-beat">
+                    <option value="1.0">Na 1. dobu</option>
+                    <option value="1.5">Na „1 a“</option>
+                    <option value="2.0">Na 2. dobu</option>
+                    <option value="2.5">Na „2 a“</option>
+                    <option value="3.0">Na 3. dobu</option>
+                    <option value="3.5">Na „3 a“</option>
+                    <option value="4.0" selected>Na 4. dobu</option>
+                    <option value="4.5">Na „4 a“</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Výber tónin pre moduláciu -->
+        <div class="selection-box" id="mod-keys-box">
+            <div class="bar-label">TÓNINY DO OBEHU MODULÁCIE:</div>
+            <div class="keys-grid" id="keys-chip-container"></div>
+        </div>
+
+        <!-- Lišta výberu stupňov (1 až 7) -->
+        <div class="selection-box">
+            <div class="bar-label">AKTÍVNE STUPNE V OBEHU (KLIKNI PRE VÝBER):</div>
+            <div class="degrees-circle-container">
+                <div class="degree-circle active" data-degree="0">1</div>
+                <div class="degree-circle active" data-degree="1">2</div>
+                <div class="degree-circle active" data-degree="2">3</div>
+                <div class="degree-circle active" data-degree="3">4</div>
+                <div class="degree-circle active" data-degree="5">5</div>
+                <div class="degree-circle active" data-degree="6">6</div>
+                <div class="degree-circle active" data-degree="7">7</div>
+            </div>
+        </div>
+
+        <!-- Mix pult -->
+        <div class="mixer-box">
+            <div class="mixer-title">VYVÁŽENIE HLASITOSTÍ & RÝCHLOSŤ</div>
+            
+            <div class="mixer-row">
+                <label for="vol-click">Metronóm:</label>
+                <input type="range" id="vol-click" min="0" max="100" value="50">
+                <span class="vol-val" id="val-click">50%</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="vol-bass">Basový tón:</label>
+                <input type="range" id="vol-bass" min="0" max="100" value="100">
+                <span class="vol-val" id="val-bass">100%</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="vol-bell">Zvonec (upozornenie):</label>
+                <input type="range" id="vol-bell" min="0" max="100" value="41">
+                <span class="vol-val" id="val-bell">41%</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="vol-degree" id="label-vol-cue">Hlas stupňa/akordu:</label>
+                <input type="range" id="vol-degree" min="0" max="100" value="75">
+                <span class="vol-val" id="val-degree">75%</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="rate-degree" id="label-rate-cue">Rýchlosť stupňa/akordu:</label>
+                <input type="range" id="rate-degree" min="60" max="160" value="120">
+                <span class="vol-val" id="val-rate-degree">1.20x</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="vol-interval">Hlas intervalu:</label>
+                <input type="range" id="vol-interval" min="0" max="100" value="0">
+                <span class="vol-val" id="val-interval">0%</span>
+            </div>
+
+            <div class="mixer-row">
+                <label for="rate-interval">Rýchlosť intervalu:</label>
+                <input type="range" id="rate-interval" min="60" max="160" value="110">
+                <span class="vol-val" id="val-rate-interval">1.10x</span>
+            </div>
+        </div>
+
+        <div class="visualizer" id="visualizer"></div>
+        <div class="beat-counter" id="beat-counter">Doba: -</div>
+        <div class="bar-counter-info" id="bar-counter-info">Takt v tónine: -</div>
+
+        <!-- Výstražný banner pre nastávajúcu moduláciu -->
+        <div class="mod-alert-banner" id="mod-alert-banner">
+            <div class="mod-alert-title">🔔 POZOR: MODULÁCIA DO</div>
+            <div class="mod-alert-key" id="mod-alert-key-name">-</div>
+        </div>
+
+        <div class="current-box">
+            <div class="label" id="current-key-label">AKTUÁLNY STUPEŇ (C DUR)</div>
+            <div class="degree-display" id="degree-display">Zastavené</div>
+            <div class="interval-display" id="interval-display"></div>
+        </div>
+
+        <div class="next-box">
+            <div class="label">PRIPRAVIŤ NA ĎALŠÍ TAKT</div>
+            <div class="next-degree-display" id="next-degree-display">-</div>
+        </div>
+
+        <button id="start-btn">Spustiť</button>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const startBtn = document.getElementById('start-btn');
+        const keySelect = document.getElementById('key-select');
+        const modulationIntervalSelect = document.getElementById('modulation-interval');
+        const keysChipContainer = document.getElementById('keys-chip-container');
+        const cueModeSelect = document.getElementById('cue-mode');
+        const bpmInput = document.getElementById('bpm-input');
+        const bpmSlider = document.getElementById('bpm-slider');
+        const cueOffsetSelect = document.getElementById('cue-offset');
+        const intervalBeatSelect = document.getElementById('interval-beat');
+        const visualizer = document.getElementById('visualizer');
+        const degreeDisplay = document.getElementById('degree-display');
+        const intervalDisplay = document.getElementById('interval-display');
+        const nextDegreeDisplay = document.getElementById('next-degree-display');
+        const beatCounter = document.getElementById('beat-counter');
+        const barCounterInfo = document.getElementById('bar-counter-info');
+        const currentKeyLabel = document.getElementById('current-key-label');
+
+        const modAlertBanner = document.getElementById('mod-alert-banner');
+        const modAlertKeyName = document.getElementById('mod-alert-key-name');
+
+        const volClickInput = document.getElementById('vol-click');
+        const volBassInput = document.getElementById('vol-bass');
+        const volBellInput = document.getElementById('vol-bell');
+        const volDegreeInput = document.getElementById('vol-degree');
+        const rateDegreeInput = document.getElementById('rate-degree');
+        const volIntervalInput = document.getElementById('vol-interval');
+        const rateIntervalInput = document.getElementById('rate-interval');
+        
+        const valClickSpan = document.getElementById('val-click');
+        const valBassSpan = document.getElementById('val-bass');
+        const valBellSpan = document.getElementById('val-bell');
+        const valDegreeSpan = document.getElementById('val-degree');
+        const valRateDegreeSpan = document.getElementById('val-rate-degree');
+        const valIntervalSpan = document.getElementById('val-interval');
+        const valRateIntervalSpan = document.getElementById('val-rate-interval');
+
+        volClickInput.addEventListener('input', (e) => valClickSpan.textContent = e.target.value + '%');
+        volBassInput.addEventListener('input', (e) => valBassSpan.textContent = e.target.value + '%');
+        volBellInput.addEventListener('input', (e) => valBellSpan.textContent = e.target.value + '%');
+        volDegreeInput.addEventListener('input', (e) => valDegreeSpan.textContent = e.target.value + '%');
+        rateDegreeInput.addEventListener('input', (e) => valRateDegreeSpan.textContent = (e.target.value / 100).toFixed(2) + 'x');
+        volIntervalInput.addEventListener('input', (e) => valIntervalSpan.textContent = e.target.value + '%');
+        rateIntervalInput.addEventListener('input', (e) => valRateIntervalSpan.textContent = (e.target.value / 100).toFixed(2) + 'x');
+
+        const keyDefinitions = {
+            "C":  { rootFreq: 65.406, notes: ["C", "D", "E", "F", "G", "A", "H"],      label: "C dur", spoken: "C dur" },
+            "G":  { rootFreq: 48.999, notes: ["G", "A", "H", "C", "D", "E", "F#"],     label: "G dur", spoken: "G dur" },
+            "D":  { rootFreq: 73.416, notes: ["D", "E", "F#", "G", "A", "H", "C#"],   label: "D dur", spoken: "D dur" },
+            "A":  { rootFreq: 55.000, notes: ["A", "H", "C#", "D", "E", "F#", "G#"],   label: "A dur", spoken: "A dur" },
+            "E":  { rootFreq: 41.203, notes: ["E", "F#", "G#", "A", "H", "C#", "D#"], label: "E dur", spoken: "E dur" },
+            "H":  { rootFreq: 61.735, notes: ["H", "C#", "D#", "E", "F#", "G#", "A#"], label: "H dur", spoken: "H dur" },
+            "F#": { rootFreq: 46.249, notes: ["F#", "G#", "A#", "H", "C#", "D#", "E#"],label: "F# / Gb dur", spoken: "F krížik dur" },
+            "C#": { rootFreq: 69.296, notes: ["C#", "D#", "E#", "F#", "G#", "A#", "H#"],label: "C# / Db dur", spoken: "C krížik dur" },
+            "Ab": { rootFreq: 51.913, notes: ["Ab", "Bb", "C", "Db", "Eb", "F", "G"],  label: "Ab dur", spoken: "As dur" },
+            "D#": { rootFreq: 77.782, notes: ["Eb", "F", "G", "Ab", "Bb", "C", "D"],  label: "Eb dur", spoken: "Es dur" },
+            "Bb": { rootFreq: 58.270, notes: ["Bb", "C", "D", "Eb", "F", "G", "A"],    label: "Bb dur", spoken: "Bé dur" },
+            "F":  { rootFreq: 43.654, notes: ["F", "G", "A", "B", "C", "D", "E"],      label: "F dur", spoken: "F dur" }
+        };
+
+        // Predvolené aktívne tóniny z obrázka: C, G, D, A, E, H, F
+        let enabledKeys = ["C", "G", "D", "A", "E", "H", "F"];
+        const chipElements = {};
+
+        Object.keys(keyDefinitions).forEach(k => {
+            const chip = document.createElement('div');
+            chip.className = `key-chip ${enabledKeys.includes(k) ? 'active' : ''}`;
+            chip.textContent = keyDefinitions[k].label;
+            chip.setAttribute('data-key', k);
+            chipElements[k] = chip;
+
+            chip.addEventListener('click', () => {
+                if (chip.classList.contains('active')) {
+                    if (enabledKeys.length <= 1) return;
+                    chip.classList.remove('active');
+                    enabledKeys = enabledKeys.filter(item => item !== k);
+                } else {
+                    chip.classList.add('active');
+                    enabledKeys.push(k);
+                }
+            });
+            keysChipContainer.appendChild(chip);
+        });
+
+        function updateChipHighlights(currentKey, isModulationBar = false) {
+            Object.keys(chipElements).forEach(k => {
+                chipElements[k].classList.remove('current-playing', 'current-mod-target');
+            });
+            if (chipElements[currentKey]) {
+                if (isModulationBar) {
+                    chipElements[currentKey].classList.add('current-mod-target');
+                } else {
+                    chipElements[currentKey].classList.add('current-playing');
+                }
+            }
+        }
+
+        // Správa aktívnych stupňov cez lištu
+        let enabledDegrees = [0, 1, 2, 3, 4, 5, 6];
+        const circles = document.querySelectorAll('.degree-circle');
+
+        circles.forEach(circle => {
+            circle.addEventListener('click', () => {
+                const degIdx = parseInt(circle.getAttribute('data-degree'));
+                if (circle.classList.contains('active')) {
+                    if (enabledDegrees.length <= 1) return;
+                    circle.classList.remove('active');
+                    enabledDegrees = enabledDegrees.filter(d => d !== degIdx);
+                } else {
+                    circle.classList.add('active');
+                    enabledDegrees.push(degIdx);
+                    enabledDegrees.sort((a, b) => a - b);
+                }
+            });
+        });
+
+        const degreeNames = ["Prvý", "Druhý", "Tretí", "Štvrtý", "Piaty", "Šiesty", "Siedmy"];
+        const intervals = ["Prima", "Tercia", "Kvinta"];
+        const diatonicTypes = ["dur", "mol", "mol", "dur", "dur", "mol", "zmenšený"];
+        const majorScaleSteps = [0, 2, 4, 5, 7, 9, 11];
+
+        function getSpokenChord(chordName) {
+            return chordName
+                .replace(/C#/g, "C krížik")
+                .replace(/D#/g, "D krížik")
+                .replace(/F#/g, "F krížik")
+                .replace(/G#/g, "G krížik")
+                .replace(/A#/g, "A krížik")
+                .replace(/Eb/g, "Es")
+                .replace(/Ab/g, "As")
+                .replace(/Bb/g, "Bé")
+                .replace(/Db/g, "Des")
+                .replace(/Gb/g, "Ges");
+        }
+
+        let currentScaleData = [];
+        let activeKey = keySelect.value;
+
+        function buildScaleFor(key) {
+            const keyInfo = keyDefinitions[key];
+            return majorScaleSteps.map((semitones, idx) => {
+                const freq = keyInfo.rootFreq * Math.pow(2, semitones / 12);
+                const chord = `${keyInfo.notes[idx]} ${diatonicTypes[idx]}`;
+                return {
+                    index: idx,
+                    name: degreeNames[idx],
+                    chord: chord,
+                    spokenChord: getSpokenChord(chord),
+                    note: keyInfo.notes[idx],
+                    freq: freq
+                };
+            });
+        }
+
+        function updateKeyScale() {
+            activeKey = keySelect.value;
+            const keyInfo = keyDefinitions[activeKey];
+            const modeText = cueModeSelect.value === 'chords' ? 'AKORD' : 'STUPEŇ';
+            currentKeyLabel.textContent = `AKTUÁLNY ${modeText} (${keyInfo.label.toUpperCase()})`;
+            currentScaleData = buildScaleFor(activeKey);
+            updateChipHighlights(activeKey, false);
+        }
+
+        keySelect.addEventListener('change', () => {
+            updateKeyScale();
+            if (isRunning && upcomingItem) {
+                upcomingItem = currentScaleData[upcomingItem.index];
+            }
+        });
+
+        cueModeSelect.addEventListener('change', () => {
+            updateKeyScale();
+        });
+
+        updateKeyScale();
+
+        let bpm = 90;
+        let isRunning = false;
+        let currentBeat = 0;
+        let barCount = 0;
+        let barInCurrentKey = 0;
+        let nextNoteTime = 0.0;
+        let timerWorker = null;
+        let lastDegreeIndex = -1;
+
+        let currentActiveItem = null;
+        let upcomingItem = null;
+        let degreeCueScheduledForBar = false;
+
+        // Modulačný stav
+        let modulationUpcomingKey = null;
+        let justEnteredNewKeyBar = false;
+
+        bpmInput.addEventListener('input', (e) => {
+            bpm = Math.min(Math.max(parseInt(e.target.value) || 60, 40), 240);
+            bpmSlider.value = bpm;
+        });
+
+        bpmSlider.addEventListener('input', (e) => {
+            bpm = parseInt(e.target.value);
+            bpmInput.value = bpm;
+        });
+
+        function getRandomDegree(scaleDataToUse = currentScaleData) {
+            const pool = enabledDegrees.map(idx => scaleDataToUse[idx]);
+
+            if (pool.length === 1) {
+                lastDegreeIndex = pool[0].index;
+                return pool[0];
+            }
+
+            let candidate;
+            do {
+                candidate = pool[Math.floor(Math.random() * pool.length)];
+            } while (candidate.index === lastDegreeIndex);
+
+            lastDegreeIndex = candidate.index;
+            return candidate;
+        }
+
+        function getRandomInterval() {
+            return intervals[Math.floor(Math.random() * intervals.length)];
+        }
+
+        function getNextModulationKey(current) {
+            let candidates = enabledKeys.filter(k => k !== current);
+            if (candidates.length === 0) return current;
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        function speakWord(word, volume, customRate = null) {
+            if (!('speechSynthesis' in window) || volume <= 0) return;
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'sk-SK';
+            utterance.volume = volume;
+            utterance.rate = customRate || Math.min(Math.max((bpm / 60) * 1.0, 1.15), 2.0);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playClick(time, isFirstBeat) {
+            const clickLevel = parseFloat(volClickInput.value) / 100;
+            if (clickLevel === 0) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.frequency.value = isFirstBeat ? 880 : 440;
+            
+            const targetGain = 0.8 * clickLevel;
+            gain.gain.setValueAtTime(targetGain, time);
+            gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+
+            osc.start(time);
+            osc.stop(time + 0.05);
+        }
+
+        // Zvuk zvončeka (Cing)
+        function playBell(time) {
+            const bellLevel = parseFloat(volBellInput.value) / 100;
+            if (bellLevel === 0) return;
+
+            [2093.0, 2793.8].forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, time);
+
+                const gainLevel = (idx === 0 ? 0.7 : 0.4) * bellLevel;
+                gain.gain.setValueAtTime(gainLevel, time);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 1.2);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(time);
+                osc.stop(time + 1.25);
+            });
+        }
+
+        function playBassNote(time, freq) {
+            const bassLevel = parseFloat(volBassInput.value) / 100;
+            if (bassLevel === 0) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(380, time);
+
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, time);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const beatDuration = 60.0 / bpm;
+            const timeBeat2 = time + beatDuration;
+            const timeBeat3 = time + (beatDuration * 2);
+            const timeBeat4 = time + (beatDuration * 3);
+            const stopTime  = time + (beatDuration * 3.8);
+
+            const peakGain  = 0.65 * bassLevel;
+            const beat2Gain = 0.25 * bassLevel;
+            const beat3Gain = 0.07 * bassLevel;
+
+            gain.gain.setValueAtTime(0.0001, time);
+            gain.gain.linearRampToValueAtTime(peakGain, time + 0.025);
+            gain.gain.exponentialRampToValueAtTime(Math.max(beat2Gain, 0.0001), timeBeat2);
+            gain.gain.exponentialRampToValueAtTime(Math.max(beat3Gain, 0.0001), timeBeat3);
+            gain.gain.exponentialRampToValueAtTime(0.0001, timeBeat4);
+
+            osc.start(time);
+            osc.stop(stopTime);
+        }
+
+        function nextBeat() {
+            const secondsPerBeat = 60.0 / bpm;
+            nextNoteTime += secondsPerBeat;
+            currentBeat = (currentBeat + 1) % 4;
+        }
+
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                const beatTime = nextNoteTime;
+                const beatNumber = currentBeat + 1;
+                const isFirst = (beatNumber === 1);
+                const secondsPerBeat = 60.0 / bpm;
+                const modBarsSetting = parseInt(modulationIntervalSelect.value);
+
+                let bellTriggeredThisBeat = false;
+                let targetKeyForAlert = null;
+
+                if (isFirst) {
+                    barCount++;
+                    barInCurrentKey++;
+                    degreeCueScheduledForBar = false;
+
+                    // Ak bola pripravená nová tónina, teraz vstupujeme do 1. taktu novej tóniny
+                    if (modulationUpcomingKey) {
+                        activeKey = modulationUpcomingKey;
+                        keySelect.value = activeKey;
+                        updateKeyScale();
+                        modulationUpcomingKey = null;
+                        barInCurrentKey = 1;
+                        justEnteredNewKeyBar = true;
+                    } else {
+                        justEnteredNewKeyBar = false;
+                    }
+
+                    if (barCount === 1) {
+                        currentActiveItem = null;
+                        upcomingItem = getRandomDegree();
+                    } else {
+                        currentActiveItem = upcomingItem;
+
+                        // Ak je tento takt posledný pred moduláciou, vyberieme novú tóninu
+                        const isLastBarBeforeModulation = (modBarsSetting > 0 && barInCurrentKey === modBarsSetting);
+                        if (isLastBarBeforeModulation) {
+                            modulationUpcomingKey = getNextModulationKey(activeKey);
+                            targetKeyForAlert = modulationUpcomingKey;
+                            const nextScale = buildScaleFor(modulationUpcomingKey);
+                            upcomingItem = getRandomDegree(nextScale);
+                        } else {
+                            upcomingItem = getRandomDegree();
+                        }
+
+                        if (currentActiveItem) {
+                            playBassNote(beatTime, currentActiveItem.freq);
+                        }
+                    }
+
+                    // Detekcia 1. ťažkej doby posledného taktu -> Zaznie CING a na ľahkú dobu ("1 a") sa vysloví nová tónina
+                    if (modBarsSetting > 0 && barInCurrentKey === modBarsSetting && barCount > 1) {
+                        playBell(beatTime);
+                        bellTriggeredThisBeat = true;
+
+                        const speakKeyTime = beatTime + (0.5 * secondsPerBeat);
+                        const speakKeyDelayMs = (speakKeyTime - audioCtx.currentTime) * 1000;
+                        const keyToSpeak = targetKeyForAlert ? keyDefinitions[targetKeyForAlert].spoken : "";
+
+                        setTimeout(() => {
+                            if (!isRunning || !keyToSpeak) return;
+                            const vol = parseFloat(volDegreeInput.value) / 100;
+                            const rateDegree = parseFloat(rateDegreeInput.value) / 100;
+                            speakWord(keyToSpeak, vol, rateDegree);
+                        }, Math.max(0, speakKeyDelayMs));
+                    }
+
+                    // Interval na zvolenej dobe (okrem varovného taktu pred moduláciou)
+                    const isModWarningBar = (modBarsSetting > 0 && barInCurrentKey === modBarsSetting && barCount > 1);
+                    if (!isModWarningBar) {
+                        const chosenIntervalPos = parseFloat(intervalBeatSelect.value);
+                        const intervalDelaySec = (chosenIntervalPos - 1.0) * secondsPerBeat;
+                        const intervalAudioTime = beatTime + intervalDelaySec;
+                        const intervalDelayMs = (intervalAudioTime - audioCtx.currentTime) * 1000;
+                        const chosenInterval = getRandomInterval();
+
+                        setTimeout(() => {
+                            if (!isRunning) return;
+                            const vol = parseFloat(volIntervalInput.value) / 100;
+                            const customRate = parseFloat(rateIntervalInput.value) / 100;
+                            intervalDisplay.textContent = `Tón: ${chosenInterval}`;
+                            speakWord(chosenInterval, vol, customRate);
+                        }, Math.max(0, intervalDelayMs));
+                    }
+                }
+
+                playClick(beatTime, isFirst);
+
+                // Predstihové hlásenie (stupňa alebo akordu)
+                const offsetBeats = parseFloat(cueOffsetSelect.value);
+                const degreeCueTargetBeat = 4.0 - offsetBeats;
+                
+                if (!degreeCueScheduledForBar && currentBeat >= 1) {
+                    if ((beatNumber - 1) <= degreeCueTargetBeat) {
+                        const delayToBeats = degreeCueTargetBeat - (beatNumber - 1);
+                        const cueAudioTime = beatTime + (delayToBeats * secondsPerBeat);
+                        const cueDelayMs = (cueAudioTime - audioCtx.currentTime) * 1000;
+                        const scheduledItem = upcomingItem;
+
+                        degreeCueScheduledForBar = true;
+
+                        setTimeout(() => {
+                            if (!isRunning || !scheduledItem) return;
+                            const vol = parseFloat(volDegreeInput.value) / 100;
+                            const rateDegree = parseFloat(rateDegreeInput.value) / 100;
+                            
+                            const isChordMode = cueModeSelect.value === 'chords';
+                            const wordToSpeak = isChordMode ? scheduledItem.spokenChord : scheduledItem.name;
+                            const textPreview = isChordMode ? scheduledItem.chord : `${scheduledItem.name} (${scheduledItem.note})`;
+
+                            nextDegreeDisplay.textContent = textPreview;
+                            speakWord(wordToSpeak, vol, rateDegree);
+                        }, Math.max(0, cueDelayMs));
+                    }
+                }
+
+                const scheduledDegreeObj = currentActiveItem;
+                const isFirstBar = (barCount === 1);
+                const drawTime = (beatTime - audioCtx.currentTime) * 1000;
+                const currentBarInKeySnapshot = barInCurrentKey;
+                const wasBellFired = bellTriggeredThisBeat;
+                const newKeyNameForDisplay = targetKeyForAlert ? keyDefinitions[targetKeyForAlert].label : null;
+                const isFirstBarOfNewKey = justEnteredNewKeyBar;
+                const activeKeySnapshot = activeKey;
+
+                setTimeout(() => {
+                    if (!isRunning) return;
+
+                    beatCounter.textContent = `Doba: ${beatNumber} / 4`;
+                    if (modBarsSetting > 0) {
+                        barCounterInfo.textContent = `Takt v tónine: ${currentBarInKeySnapshot} / ${modBarsSetting}`;
+                    } else {
+                        barCounterInfo.textContent = `Takt celkovo: ${barCount}`;
+                    }
+
+                    if (beatNumber === 1) {
+                        updateChipHighlights(activeKeySnapshot, isFirstBarOfNewKey);
+
+                        if (isFirstBar) {
+                            degreeDisplay.innerHTML = `<span style="color: #8b949e; font-size: 20px;">Nábehový takt...</span>`;
+                            intervalDisplay.textContent = "";
+                        } else if (scheduledDegreeObj) {
+                            const isChordMode = cueModeSelect.value === 'chords';
+                            if (isChordMode) {
+                                degreeDisplay.innerHTML = `${scheduledDegreeObj.chord} <span class="tone-sub">[ ${scheduledDegreeObj.name} stupeň ]</span>`;
+                            } else {
+                                degreeDisplay.innerHTML = `${scheduledDegreeObj.name} stupeň <span class="tone-sub">[ ${scheduledDegreeObj.note} ]</span>`;
+                            }
+                            intervalDisplay.textContent = "";
+                            nextDegreeDisplay.textContent = "—";
+                        }
+
+                        // Riadenie veľkého banneru tóniny
+                        if (wasBellFired && newKeyNameForDisplay) {
+                            visualizer.className = 'visualizer indicator-bell';
+                            modAlertKeyName.textContent = newKeyNameForDisplay.toUpperCase();
+                            modAlertBanner.style.display = 'block';
+                        } else {
+                            modAlertBanner.style.display = 'none';
+                            visualizer.className = 'visualizer indicator-first-beat';
+                        }
+                    } else {
+                        visualizer.className = 'visualizer indicator-beat';
+                    }
+
+                    setTimeout(() => {
+                        visualizer.className = 'visualizer';
+                    }, 80);
+                }, Math.max(0, drawTime));
+
+                nextBeat();
+            }
+        }
+
+        function toggleMetronome() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            isRunning = !isRunning;
+
+            if (isRunning) {
+                currentBeat = 0;
+                barCount = 0;
+                barInCurrentKey = 0;
+                lastDegreeIndex = -1;
+                degreeCueScheduledForBar = false;
+                modulationUpcomingKey = null;
+                justEnteredNewKeyBar = false;
+
+                updateKeyScale();
+                upcomingItem = getRandomDegree();
+                nextNoteTime = audioCtx.currentTime + 0.05;
+
+                startBtn.textContent = "Zastaviť";
+                startBtn.style.backgroundColor = "#da3633";
+
+                timerWorker = setInterval(scheduler, 25);
+            } else {
+                clearInterval(timerWorker);
+                window.speechSynthesis.cancel();
+                startBtn.textContent = "Spustiť";
+                startBtn.style.backgroundColor = "#238636";
+                visualizer.className = 'visualizer';
+                beatCounter.textContent = "Doba: -";
+                barCounterInfo.textContent = "Takt v tónine: -";
+                degreeDisplay.textContent = "Zastavené";
+                intervalDisplay.textContent = "";
+                nextDegreeDisplay.textContent = "-";
+                modAlertBanner.style.display = 'none';
+                updateChipHighlights(activeKey, false);
+            }
+        }
+
+        startBtn.addEventListener('click', toggleMetronome);
+    </script>
+</body>
+</html>
